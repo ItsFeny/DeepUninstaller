@@ -1,0 +1,105 @@
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
+using System.Windows.Media;
+
+namespace DeepUninstaller;
+
+public abstract class Observable : INotifyPropertyChanged
+{
+    public event PropertyChangedEventHandler? PropertyChanged;
+    protected void OnChanged([CallerMemberName] string? n = null) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(n));
+}
+
+public class InstalledApp : Observable
+{
+    private ImageSource? _icon;
+
+    public string Name { get; set; } = "";
+    public string Publisher { get; set; } = "";
+    public string Version { get; set; } = "";
+    public string InstallLocation { get; set; } = "";
+    public string UninstallString { get; set; } = "";
+    public string QuietUninstallString { get; set; } = "";
+    public string DisplayIcon { get; set; } = "";
+    /// <summary>Ruta tipo "HKLM\SOFTWARE\...\Uninstall\X" (vista 64 bits). Vacío si no viene del registro.</summary>
+    public string RegistryKey { get; set; } = "";
+    public long SizeKB { get; set; }
+    public DateTime? InstallDate { get; set; }
+    public string Source { get; set; } = "Programa";
+    /// <summary>Manifiesto del launcher (Epic) que también hay que borrar.</summary>
+    public string ManifestFile { get; set; } = "";
+    public AppCategory Category { get; set; }
+
+    public ImageSource? Icon
+    {
+        get => _icon;
+        set { _icon = value; OnChanged(); OnChanged(nameof(HasIcon)); }
+    }
+    public bool HasIcon => _icon != null;
+
+    public string CategoryLabel => Categorizer.Label(Category);
+    public string CategoryGlyph => Categorizer.Glyph(Category);
+    public string SizeText => SizeKB <= 0 ? "" : Util.FormatSize(SizeKB * 1024);
+    public string DateText => InstallDate?.ToString("dd/MM/yyyy") ?? "—";
+    public string VersionText => string.IsNullOrWhiteSpace(Version) ? "—" : Version;
+    public string SizeDetailText => SizeKB <= 0 ? "Desconocido" : SizeText;
+    public bool HasUninstaller => UninstallString.Length > 0 && !UninstallString.StartsWith("steam://", StringComparison.OrdinalIgnoreCase);
+    public string UninstallerText => HasUninstaller ? "Sí, tiene desinstalador oficial" : "No (se borrará directamente)";
+    public string PublisherText => string.IsNullOrWhiteSpace(Publisher) ? "Fabricante desconocido" : Publisher;
+    public string Subtitle
+    {
+        get
+        {
+            var parts = new List<string> { PublisherText };
+            if (!string.IsNullOrWhiteSpace(Version)) parts.Add(Version);
+            return string.Join("  ·  ", parts);
+        }
+    }
+}
+
+public enum LeftoverKind { Carpeta, Archivo, ClaveRegistro, ValorRegistro, Servicio, Tarea }
+
+/// <summary>Un resto encontrado por el escáner.</summary>
+public class LeftoverItem
+{
+    public LeftoverKind Kind { get; set; }
+    /// <summary>Ruta de archivo/carpeta, ruta de registro, nombre de servicio o de tarea.</summary>
+    public string Path { get; set; } = "";
+    /// <summary>Solo para ValorRegistro: nombre del valor dentro de la clave Path.</summary>
+    public string ValueName { get; set; } = "";
+    public bool HighConfidence { get; set; }
+    public string Reason { get; set; } = "";
+    public long SizeBytes { get; set; }
+    /// <summary>Otros programas instalados que están DENTRO de esta carpeta (borrarla los rompería).</summary>
+    public List<string> AffectedApps { get; set; } = new();
+    public bool Danger => AffectedApps.Count > 0;
+
+    public string DisplayPath => Kind == LeftoverKind.ValorRegistro ? $"{Path}  →  {ValueName}" : Path;
+}
+
+public static class Util
+{
+    public static string FormatSize(long bytes)
+    {
+        string[] u = { "B", "KB", "MB", "GB", "TB" };
+        double v = bytes;
+        int i = 0;
+        while (v >= 1024 && i < u.Length - 1) { v /= 1024; i++; }
+        return $"{v:0.#} {u[i]}";
+    }
+
+    public static long DirSize(string path)
+    {
+        long total = 0;
+        try
+        {
+            var opts = new EnumerationOptions { RecurseSubdirectories = true, IgnoreInaccessible = true, AttributesToSkip = FileAttributes.ReparsePoint };
+            foreach (var f in new DirectoryInfo(path).EnumerateFiles("*", opts))
+            {
+                try { total += f.Length; } catch { }
+            }
+        }
+        catch { }
+        return total;
+    }
+}

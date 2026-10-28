@@ -1,0 +1,492 @@
+<Window x:Class="DeepUninstaller.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:DeepUninstaller"
+        Title="Deep Uninstaller" Icon="Assets/app.ico" Width="1260" Height="800" MinWidth="1020" MinHeight="620"
+        WindowStartupLocation="CenterScreen" Background="{StaticResource Bg}" Foreground="{StaticResource Text}"
+        FontFamily="Segoe UI" FontSize="13" UseLayoutRounding="True">
+  <Window.Resources>
+    <!-- Icono de programa: imagen real o, si no tiene, el icono Material de su tipo -->
+    <DataTemplate x:Key="AppIcon" DataType="{x:Type local:InstalledApp}">
+      <Grid>
+        <Border CornerRadius="9" Background="{StaticResource AccentSoft}">
+          <Border.Style>
+            <Style TargetType="Border">
+              <Style.Triggers>
+                <DataTrigger Binding="{Binding HasIcon}" Value="True"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger>
+              </Style.Triggers>
+            </Style>
+          </Border.Style>
+          <Viewbox Margin="7"><TextBlock Style="{StaticResource Icon}" Text="{Binding CategoryGlyph}" Foreground="{StaticResource Accent}"/></Viewbox>
+        </Border>
+        <Image Source="{Binding Icon}" Visibility="{Binding HasIcon, Converter={StaticResource BoolToVis}}"
+               RenderOptions.BitmapScalingMode="HighQuality"/>
+      </Grid>
+    </DataTemplate>
+  </Window.Resources>
+
+  <Grid>
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="236"/>
+      <ColumnDefinition Width="*"/>
+    </Grid.ColumnDefinitions>
+
+    <!-- ===================== BARRA LATERAL ===================== -->
+    <Border Background="{StaticResource Sidebar}" BorderBrush="{StaticResource Border}" BorderThickness="0,0,1,0">
+      <DockPanel Margin="12,20,12,14">
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="8,0,0,26">
+          <Image Source="Assets/app.png" Width="36" Height="36" RenderOptions.BitmapScalingMode="HighQuality"/>
+          <StackPanel Margin="11,0,0,0" VerticalAlignment="Center">
+            <TextBlock Text="Deep Uninstaller" FontSize="15" FontWeight="SemiBold"/>
+            <TextBlock Text="Desinstalación profunda" FontSize="11.5" Foreground="{StaticResource Muted}"/>
+          </StackPanel>
+        </StackPanel>
+
+        <Button DockPanel.Dock="Bottom" Style="{StaticResource BtnText}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
+                Click="OpenBackups_Click" ToolTip="Copias del registro guardadas antes de cada borrado">
+          <StackPanel Orientation="Horizontal">
+            <TextBlock Style="{StaticResource Icon}" Text="&#xE889;" FontSize="18" Margin="0,0,10,0"/>
+            <TextBlock Text="Respaldos del registro"/>
+          </StackPanel>
+        </Button>
+
+        <StackPanel DockPanel.Dock="Top">
+          <TextBlock Text="HERRAMIENTAS" Style="{StaticResource SectionLabel}"/>
+          <RadioButton x:Name="NavUninstall" Style="{StaticResource NavItem}" IsChecked="True" Checked="Nav_Checked" AutomationProperties.Name="Desinstalar">
+            <StackPanel Orientation="Horizontal">
+              <TextBlock Style="{StaticResource Icon}" Text="&#xE16C;" Margin="0,0,12,0"/>
+              <TextBlock Text="Desinstalar" VerticalAlignment="Center"/>
+            </StackPanel>
+          </RadioButton>
+          <RadioButton x:Name="NavClean" Style="{StaticResource NavItem}" Checked="Nav_Checked" AutomationProperties.Name="Limpieza del sistema">
+            <StackPanel Orientation="Horizontal">
+              <TextBlock Style="{StaticResource Icon}" Text="&#xF0FF;" Margin="0,0,12,0"/>
+              <TextBlock Text="Limpieza del sistema" VerticalAlignment="Center"/>
+            </StackPanel>
+          </RadioButton>
+          <TextBlock x:Name="CategoriesLabel" Text="FILTRAR POR TIPO" Style="{StaticResource SectionLabel}" Margin="10,24,0,8"/>
+        </StackPanel>
+
+        <ListBox x:Name="CategoryList" ItemContainerStyle="{StaticResource NavListItem}" SelectionChanged="CategoryList_SelectionChanged">
+          <ListBox.ItemTemplate>
+            <DataTemplate>
+              <DockPanel>
+                <Border DockPanel.Dock="Right" CornerRadius="9" Padding="7,1" Background="{StaticResource SurfaceHover}" VerticalAlignment="Center">
+                  <TextBlock Text="{Binding Count}" FontSize="11.5" Foreground="{StaticResource Muted}"/>
+                </Border>
+                <TextBlock Style="{StaticResource Icon}" Text="{Binding Glyph}" Margin="0,0,12,0"/>
+                <TextBlock Text="{Binding Label}" VerticalAlignment="Center"/>
+              </DockPanel>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </DockPanel>
+    </Border>
+
+    <!-- ===================== CONTENIDO ===================== -->
+    <Grid Grid.Column="1" Margin="28,22,28,20">
+
+      <!-- ********** VISTA: PROGRAMAS ********** -->
+      <Grid x:Name="ProgramsView">
+        <Grid.RowDefinitions>
+          <RowDefinition Height="Auto"/>
+          <RowDefinition Height="Auto"/>
+          <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Margin="0,0,0,16">
+          <TextBlock x:Name="ProgramsTitle" Text="Todos los programas" FontSize="24" FontWeight="SemiBold"/>
+          <TextBlock x:Name="CountText" Foreground="{StaticResource Muted}" Margin="0,3,0,0"/>
+        </StackPanel>
+
+        <DockPanel Grid.Row="1" Margin="0,0,0,14">
+          <Button DockPanel.Dock="Right" Style="{StaticResource IconBtn}" Click="Refresh_Click" ToolTip="Volver a leer los programas instalados" Margin="8,0,0,0">
+            <TextBlock Style="{StaticResource Icon}" Text="&#xE5D5;"/>
+          </Button>
+          <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Margin="14,0,0,0" VerticalAlignment="Center">
+            <TextBlock Text="Ordenar:" Foreground="{StaticResource Muted}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+            <RadioButton x:Name="SortName" Style="{StaticResource Chip}" GroupName="Sort" Content="Nombre" IsChecked="True" Checked="Sort_Checked"/>
+            <RadioButton x:Name="SortSize" Style="{StaticResource Chip}" GroupName="Sort" Content="Tamaño" Checked="Sort_Checked"/>
+            <RadioButton x:Name="SortDate" Style="{StaticResource Chip}" GroupName="Sort" Content="Recientes" Checked="Sort_Checked" Margin="0"/>
+          </StackPanel>
+          <Grid>
+            <TextBox x:Name="SearchBox" Padding="38,9,10,9" TextChanged="SearchBox_TextChanged"/>
+            <TextBlock Style="{StaticResource Icon}" Text="&#xE8B6;" Foreground="{StaticResource Muted}" Margin="12,0,0,0" IsHitTestVisible="False"/>
+            <TextBlock x:Name="SearchHint" Text="Buscar por nombre o fabricante..." Foreground="{StaticResource Subtle}"
+                       IsHitTestVisible="False" VerticalAlignment="Center" Margin="40,0,0,0"/>
+          </Grid>
+        </DockPanel>
+
+        <Grid Grid.Row="2">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="340"/>
+          </Grid.ColumnDefinitions>
+
+          <ListBox x:Name="AppsList" SelectionChanged="AppsList_SelectionChanged" MouseDoubleClick="AppsList_MouseDoubleClick"
+                   IsSynchronizedWithCurrentItem="False">
+            <ListBox.ItemTemplate>
+              <DataTemplate>
+                <DockPanel>
+                  <ContentPresenter DockPanel.Dock="Left" Content="{Binding}" ContentTemplate="{StaticResource AppIcon}" Width="36" Height="36" Margin="0,0,14,0"/>
+                  <StackPanel DockPanel.Dock="Right" VerticalAlignment="Center" Margin="12,0,2,0" MinWidth="70">
+                    <TextBlock Text="{Binding SizeText}" HorizontalAlignment="Right" FontWeight="SemiBold"/>
+                    <TextBlock Text="{Binding CategoryLabel}" HorizontalAlignment="Right" FontSize="11.5" Foreground="{StaticResource Subtle}"/>
+                  </StackPanel>
+                  <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                    <TextBlock Text="{Binding Subtitle}" Foreground="{StaticResource Muted}" FontSize="12" TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
+                  </StackPanel>
+                </DockPanel>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+
+          <!-- Panel de detalles -->
+          <Border Grid.Column="1" Background="{StaticResource Surface}" CornerRadius="12" Margin="16,0,0,0" Padding="22">
+            <Grid>
+              <StackPanel x:Name="EmptyDetail" VerticalAlignment="Center" HorizontalAlignment="Center">
+                <Border Width="64" Height="64" CornerRadius="32" Background="{StaticResource SurfaceHover}" HorizontalAlignment="Center">
+                  <TextBlock Style="{StaticResource Icon}" Text="&#xE913;" FontSize="30" Foreground="{StaticResource Muted}" HorizontalAlignment="Center"/>
+                </Border>
+                <TextBlock Text="Selecciona un programa" FontSize="15" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,16,0,6"/>
+                <TextBlock Text="Verás sus detalles y podrás desinstalarlo a fondo, revisando antes todo lo que se va a borrar."
+                           Foreground="{StaticResource Muted}" TextWrapping="Wrap" TextAlignment="Center" MaxWidth="240"/>
+              </StackPanel>
+
+              <DockPanel x:Name="DetailContent" Visibility="Collapsed">
+                <StackPanel DockPanel.Dock="Bottom">
+                  <Button Style="{StaticResource BtnDanger}" Click="Analyze_Click" HorizontalAlignment="Stretch" Padding="16,11"
+                          AutomationProperties.Name="Analizar y desinstalar">
+                    <StackPanel Orientation="Horizontal">
+                      <TextBlock Style="{StaticResource Icon}" Text="&#xE16C;" FontSize="19" Margin="0,0,9,0"/>
+                      <TextBlock Text="Analizar y desinstalar" VerticalAlignment="Center"/>
+                    </StackPanel>
+                  </Button>
+                  <TextBlock Text="Primero verás TODO lo que se va a borrar. No se elimina nada hasta que confirmes."
+                             Foreground="{StaticResource Muted}" FontSize="11.5" TextWrapping="Wrap" TextAlignment="Center" Margin="0,10,0,0"/>
+                </StackPanel>
+
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                  <StackPanel>
+                    <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource AppIcon}" Width="56" Height="56" HorizontalAlignment="Left"/>
+                    <TextBlock Text="{Binding Name}" FontSize="18" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,14,0,2"/>
+                    <TextBlock Text="{Binding PublisherText}" Foreground="{StaticResource Muted}" TextWrapping="Wrap"/>
+                    <Border CornerRadius="10" Padding="9,3" Background="{StaticResource AccentSoft}" HorizontalAlignment="Left" Margin="0,10,0,0">
+                      <StackPanel Orientation="Horizontal">
+                        <TextBlock Style="{StaticResource Icon}" Text="{Binding CategoryGlyph}" FontSize="14" Foreground="{StaticResource Accent}" Margin="0,0,6,0"/>
+                        <TextBlock Text="{Binding CategoryLabel}" FontSize="12" Foreground="{StaticResource Accent}"/>
+                      </StackPanel>
+                    </Border>
+
+                    <Border Height="1" Background="{StaticResource Border}" Margin="0,18"/>
+
+                    <Grid>
+                      <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                      </Grid.ColumnDefinitions>
+                      <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+                      </Grid.RowDefinitions>
+                      <Grid.Resources>
+                        <Style TargetType="TextBlock" x:Key="Lbl">
+                          <Setter Property="Foreground" Value="{StaticResource Muted}"/>
+                          <Setter Property="Margin" Value="0,0,16,10"/>
+                        </Style>
+                        <Style TargetType="TextBlock" x:Key="Val">
+                          <Setter Property="TextWrapping" Value="Wrap"/>
+                          <Setter Property="Margin" Value="0,0,0,10"/>
+                        </Style>
+                      </Grid.Resources>
+                      <TextBlock Text="Versión" Style="{StaticResource Lbl}"/>
+                      <TextBlock Grid.Column="1" Text="{Binding VersionText}" Style="{StaticResource Val}"/>
+                      <TextBlock Grid.Row="1" Text="Tamaño" Style="{StaticResource Lbl}"/>
+                      <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding SizeDetailText}" Style="{StaticResource Val}"/>
+                      <TextBlock Grid.Row="2" Text="Instalado" Style="{StaticResource Lbl}"/>
+                      <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding DateText}" Style="{StaticResource Val}"/>
+                      <TextBlock Grid.Row="3" Text="Desinstalador" Style="{StaticResource Lbl}"/>
+                      <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding UninstallerText}" Style="{StaticResource Val}"/>
+                    </Grid>
+
+                    <TextBlock Text="Carpeta de instalación" Foreground="{StaticResource Muted}" Margin="0,4,0,6"/>
+                    <Border Background="{StaticResource Bg}" CornerRadius="8" Padding="10,6,4,6">
+                      <DockPanel>
+                        <Button DockPanel.Dock="Right" Style="{StaticResource IconBtn}" Width="30" Height="30" Click="OpenInstallFolder_Click" ToolTip="Abrir en el Explorador">
+                          <TextBlock Style="{StaticResource Icon}" Text="&#xE2C8;" FontSize="18"/>
+                        </Button>
+                        <TextBlock x:Name="InstallPathText" TextWrapping="Wrap" VerticalAlignment="Center" FontSize="12"/>
+                      </DockPanel>
+                    </Border>
+                  </StackPanel>
+                </ScrollViewer>
+              </DockPanel>
+            </Grid>
+          </Border>
+        </Grid>
+      </Grid>
+
+      <!-- ********** VISTA: REVISIÓN DE LO QUE SE ELIMINARÁ ********** -->
+      <Grid x:Name="ReviewView" Visibility="Collapsed">
+        <Grid.RowDefinitions>
+          <RowDefinition Height="Auto"/>
+          <RowDefinition Height="Auto"/>
+          <RowDefinition Height="Auto"/>
+          <RowDefinition Height="*"/>
+          <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <DockPanel Margin="0,0,0,16">
+          <Button DockPanel.Dock="Left" Style="{StaticResource IconBtn}" Click="CancelReview_Click" ToolTip="Volver sin borrar nada" Margin="0,0,10,0" VerticalAlignment="Center"
+                  AutomationProperties.Name="Volver">
+            <TextBlock Style="{StaticResource Icon}" Text="&#xE5C4;"/>
+          </Button>
+          <ContentPresenter x:Name="ReviewIcon" DockPanel.Dock="Left" ContentTemplate="{StaticResource AppIcon}" Width="42" Height="42" Margin="0,0,14,0"/>
+          <StackPanel DockPanel.Dock="Right" HorizontalAlignment="Right" VerticalAlignment="Center">
+            <TextBlock x:Name="SelectedSizeText" FontSize="22" FontWeight="SemiBold" HorizontalAlignment="Right"/>
+            <TextBlock x:Name="SelectedCountText" Foreground="{StaticResource Muted}" HorizontalAlignment="Right"/>
+          </StackPanel>
+          <StackPanel VerticalAlignment="Center">
+            <TextBlock Text="Revisa lo que se va a eliminar" Foreground="{StaticResource Muted}"/>
+            <TextBlock x:Name="ReviewTitle" FontSize="22" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+          </StackPanel>
+        </DockPanel>
+
+        <StackPanel Grid.Row="1">
+        <!-- Avisos importantes de este análisis -->
+        <Border x:Name="WarningsBox" Background="{StaticResource WarnSoft}" BorderBrush="{StaticResource Warn}" BorderThickness="1"
+                CornerRadius="10" Padding="14,11" Margin="0,0,0,10" Visibility="Collapsed">
+          <DockPanel>
+            <TextBlock Style="{StaticResource Icon}" Text="&#xE002;" Foreground="{StaticResource Warn}" VerticalAlignment="Top" Margin="0,0,12,0"/>
+            <StackPanel>
+              <TextBlock Text="Antes de eliminar, ten en cuenta:" FontWeight="SemiBold" Margin="0,0,0,4"/>
+              <ItemsControl x:Name="WarningsList">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate>
+                    <DockPanel Margin="0,3,0,0">
+                      <TextBlock DockPanel.Dock="Left" Text="•" Foreground="{StaticResource Warn}" Margin="0,0,8,0"/>
+                      <TextBlock Text="{Binding}" TextWrapping="Wrap" Foreground="{StaticResource Text}"/>
+                    </DockPanel>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+          </DockPanel>
+        </Border>
+        <Border Background="{StaticResource AccentSoft}" CornerRadius="10" Padding="14,11" Margin="0,0,0,14">
+          <DockPanel>
+            <TextBlock Style="{StaticResource Icon}" Text="&#xE88E;" Foreground="{StaticResource Accent}" VerticalAlignment="Top" Margin="0,0,12,0"/>
+            <TextBlock TextWrapping="Wrap" LineHeight="19">
+              <Run FontWeight="SemiBold">Todavía no se ha borrado nada.</Run>
+              <Run Foreground="{StaticResource Muted}">Desmarca lo que quieras conservar. Pulsa la flecha de una carpeta para ver todas sus subcarpetas y archivos y elegir uno por uno.</Run>
+              <LineBreak/>
+              <Run Foreground="{StaticResource Ok}" FontWeight="SemiBold">Seguro</Run><Run Foreground="{StaticResource Muted}"> = pertenece al programa.   </Run>
+              <Run Foreground="{StaticResource Warn}" FontWeight="SemiBold">Posible</Run><Run Foreground="{StaticResource Muted}"> = nombre parecido, revísalo.   </Run>
+              <Run Foreground="{StaticResource Danger}" FontWeight="SemiBold">Peligro</Run><Run Foreground="{StaticResource Muted}"> = contiene otros programas.</Run>
+            </TextBlock>
+          </DockPanel>
+        </Border>
+        </StackPanel>
+
+        <DockPanel Grid.Row="2" Margin="0,0,0,12">
+          <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+            <Button Style="{StaticResource BtnText}" Click="CheckAll_Click">
+              <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource Icon}" Text="&#xE877;" FontSize="17" Margin="0,0,6,0"/><TextBlock Text="Marcar todo"/></StackPanel>
+            </Button>
+            <Button Style="{StaticResource BtnText}" Click="CheckSafe_Click">
+              <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource Icon}" Text="&#xE86C;" FontSize="17" Margin="0,0,6,0"/><TextBlock Text="Solo seguros"/></StackPanel>
+            </Button>
+            <Button Style="{StaticResource BtnText}" Click="CheckNone_Click">
+              <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource Icon}" Text="&#xE5CD;" FontSize="17" Margin="0,0,6,0"/><TextBlock Text="Desmarcar"/></StackPanel>
+            </Button>
+          </StackPanel>
+          <StackPanel Orientation="Horizontal">
+            <RadioButton x:Name="FilterAll" Style="{StaticResource Chip}" GroupName="ReviewFilter" IsChecked="True" Checked="ReviewFilter_Checked"/>
+            <RadioButton x:Name="FilterFiles" Style="{StaticResource Chip}" GroupName="ReviewFilter" Checked="ReviewFilter_Checked"/>
+            <RadioButton x:Name="FilterRegistry" Style="{StaticResource Chip}" GroupName="ReviewFilter" Checked="ReviewFilter_Checked"/>
+            <RadioButton x:Name="FilterSystem" Style="{StaticResource Chip}" GroupName="ReviewFilter" Checked="ReviewFilter_Checked"/>
+          </StackPanel>
+        </DockPanel>
+
+        <TreeView x:Name="ReviewTree" Grid.Row="3" Background="Transparent" BorderThickness="0"
+                  ItemContainerStyle="{StaticResource RootTreeItem}"
+                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                  VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.ScrollUnit="Pixel">
+          <TreeView.Resources>
+            <HierarchicalDataTemplate DataType="{x:Type local:TreeNode}" ItemsSource="{Binding Children}"
+                                      ItemContainerStyle="{StaticResource TreeItem}">
+              <DockPanel Margin="0,1">
+                <CheckBox DockPanel.Dock="Left" IsChecked="{Binding IsChecked, Mode=TwoWay}" Margin="2,0,12,0"
+                          Visibility="{Binding ShowCheck, Converter={StaticResource BoolToVis}}"/>
+                <TextBlock DockPanel.Dock="Left" Text="{Binding Glyph}" Margin="0,0,12,0">
+                  <TextBlock.Style>
+                    <Style TargetType="TextBlock" BasedOn="{StaticResource Icon}">
+                      <Setter Property="Foreground" Value="{StaticResource Accent}"/>
+                      <Style.Triggers>
+                        <DataTrigger Binding="{Binding Kind}" Value="Carpeta"><Setter Property="Foreground" Value="{StaticResource Warn}"/></DataTrigger>
+                        <DataTrigger Binding="{Binding Kind}" Value="Archivo"><Setter Property="Foreground" Value="{StaticResource Muted}"/></DataTrigger>
+                        <DataTrigger Binding="{Binding Kind}" Value="Servicio"><Setter Property="Foreground" Value="{StaticResource Ok}"/></DataTrigger>
+                        <DataTrigger Binding="{Binding Kind}" Value="Tarea"><Setter Property="Foreground" Value="{StaticResource Ok}"/></DataTrigger>
+                        <DataTrigger Binding="{Binding IsPlaceholder}" Value="True"><Setter Property="Foreground" Value="{StaticResource Subtle}"/></DataTrigger>
+                      </Style.Triggers>
+                    </Style>
+                  </TextBlock.Style>
+                </TextBlock>
+                <Button DockPanel.Dock="Right" Style="{StaticResource IconBtn}" Width="30" Height="30" Click="OpenNode_Click" Tag="{Binding}"
+                        ToolTip="Mostrar en el Explorador" Visibility="{Binding CanOpen, Converter={StaticResource BoolToVis}}" Margin="6,0,0,0">
+                  <TextBlock Style="{StaticResource Icon}" Text="&#xE89E;" FontSize="17"/>
+                </Button>
+                <Border DockPanel.Dock="Right" CornerRadius="9" Padding="9,2" VerticalAlignment="Center" Margin="10,0,0,0">
+                  <Border.Style>
+                    <Style TargetType="Border">
+                      <Setter Property="Background" Value="{StaticResource WarnSoft}"/>
+                      <Style.Triggers>
+                        <DataTrigger Binding="{Binding HighConfidence}" Value="True"><Setter Property="Background" Value="{StaticResource OkSoft}"/></DataTrigger>
+                        <DataTrigger Binding="{Binding Danger}" Value="True"><Setter Property="Background" Value="{StaticResource DangerSoft}"/></DataTrigger>
+                        <DataTrigger Binding="{Binding IsRoot}" Value="False"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger>
+                      </Style.Triggers>
+                    </Style>
+                  </Border.Style>
+                  <TextBlock Text="{Binding ConfidenceText}" FontSize="11.5" FontWeight="SemiBold">
+                    <TextBlock.Style>
+                      <Style TargetType="TextBlock">
+                        <Setter Property="Foreground" Value="{StaticResource Warn}"/>
+                        <Style.Triggers>
+                          <DataTrigger Binding="{Binding HighConfidence}" Value="True"><Setter Property="Foreground" Value="{StaticResource Ok}"/></DataTrigger>
+                          <DataTrigger Binding="{Binding Danger}" Value="True"><Setter Property="Foreground" Value="{StaticResource Danger}"/></DataTrigger>
+                        </Style.Triggers>
+                      </Style>
+                    </TextBlock.Style>
+                  </TextBlock>
+                </Border>
+                <StackPanel VerticalAlignment="Center">
+                  <TextBlock Text="{Binding Title}" TextTrimming="CharacterEllipsis" ToolTip="{Binding Path}">
+                    <TextBlock.Style>
+                      <Style TargetType="TextBlock">
+                        <Style.Triggers>
+                          <DataTrigger Binding="{Binding IsRoot}" Value="True"><Setter Property="FontWeight" Value="SemiBold"/></DataTrigger>
+                          <DataTrigger Binding="{Binding IsPlaceholder}" Value="True"><Setter Property="Foreground" Value="{StaticResource Subtle}"/></DataTrigger>
+                        </Style.Triggers>
+                      </Style>
+                    </TextBlock.Style>
+                  </TextBlock>
+                  <TextBlock Text="{Binding Detail}" Foreground="{StaticResource Muted}" FontSize="11.5" TextTrimming="CharacterEllipsis" Margin="0,1,0,0"/>
+                  <StackPanel Orientation="Horizontal" Margin="0,3,0,0" Visibility="{Binding Danger, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Style="{StaticResource Icon}" Text="&#xE002;" FontSize="15" Foreground="{StaticResource Danger}" Margin="0,0,6,0"/>
+                    <TextBlock Text="{Binding AffectsText}" Foreground="{StaticResource Danger}" FontSize="12" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                  </StackPanel>
+                </StackPanel>
+              </DockPanel>
+            </HierarchicalDataTemplate>
+          </TreeView.Resources>
+        </TreeView>
+
+        <TextBlock x:Name="ReviewEmpty" Grid.Row="3" Text="No hay elementos en esta categoría." Foreground="{StaticResource Muted}"
+                   HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"/>
+
+        <Border Grid.Row="4" Background="{StaticResource Surface}" CornerRadius="12" Padding="16,12" Margin="0,12,0,0">
+          <DockPanel>
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+              <Button Content="Cancelar" Style="{StaticResource BtnGhost}" Click="CancelReview_Click" Margin="0,0,10,0"/>
+              <Button x:Name="DeleteBtn" Style="{StaticResource BtnDanger}" Click="DeleteSelected_Click" AutomationProperties.Name="Eliminar seleccionados">
+                <StackPanel Orientation="Horizontal">
+                  <TextBlock Style="{StaticResource Icon}" Text="&#xE92B;" FontSize="19" Margin="0,0,8,0"/>
+                  <TextBlock Text="Eliminar seleccionados" VerticalAlignment="Center"/>
+                </StackPanel>
+              </Button>
+            </StackPanel>
+            <StackPanel VerticalAlignment="Center">
+              <CheckBox x:Name="RunUninstallerCheck" Content="Ejecutar primero el desinstalador oficial" FontWeight="SemiBold"/>
+              <TextBlock x:Name="RunUninstallerHint" Foreground="{StaticResource Muted}" FontSize="11.5" Margin="27,3,0,0" TextWrapping="Wrap"
+                         Text="Recomendado: el programa se desinstala a sí mismo y después se borran los restos marcados."/>
+            </StackPanel>
+          </DockPanel>
+        </Border>
+      </Grid>
+
+      <!-- ********** VISTA: LIMPIEZA DEL SISTEMA ********** -->
+      <Grid x:Name="CleanView" Visibility="Collapsed">
+        <Grid.RowDefinitions>
+          <RowDefinition Height="Auto"/>
+          <RowDefinition Height="Auto"/>
+          <RowDefinition Height="*"/>
+          <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <StackPanel Margin="0,0,0,16">
+          <TextBlock Text="Limpieza del sistema" FontSize="24" FontWeight="SemiBold"/>
+          <TextBlock Text="Temporales y cachés que Windows y los juegos regeneran solos. Es seguro borrarlos."
+                     Foreground="{StaticResource Muted}" Margin="0,3,0,0"/>
+        </StackPanel>
+
+        <Border Grid.Row="1" CornerRadius="12" Padding="22,18" Margin="0,0,0,14">
+          <Border.Background>
+            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+              <GradientStop Color="#2A3366" Offset="0"/>
+              <GradientStop Color="#2E2350" Offset="1"/>
+            </LinearGradientBrush>
+          </Border.Background>
+          <DockPanel>
+            <Button DockPanel.Dock="Right" Style="{StaticResource BtnGhost}" Click="AnalyzeClean_Click" VerticalAlignment="Center">
+              <StackPanel Orientation="Horizontal">
+                <TextBlock Style="{StaticResource Icon}" Text="&#xE5D5;" FontSize="18" Margin="0,0,8,0"/>
+                <TextBlock Text="Analizar de nuevo" VerticalAlignment="Center"/>
+              </StackPanel>
+            </Button>
+            <TextBlock Style="{StaticResource Icon}" Text="&#xE1DB;" FontSize="38" Foreground="#AFC0FF" Margin="0,0,18,0"/>
+            <StackPanel VerticalAlignment="Center">
+              <TextBlock x:Name="CleanTotalBig" Text="…" FontSize="28" FontWeight="SemiBold"/>
+              <TextBlock x:Name="CleanTotalSub" Text="Analizando..." Foreground="#B9C0D6"/>
+            </StackPanel>
+          </DockPanel>
+        </Border>
+
+        <ListBox x:Name="CleanList" Grid.Row="2">
+          <ListBox.ItemTemplate>
+            <DataTemplate>
+              <DockPanel>
+                <CheckBox DockPanel.Dock="Left" IsChecked="{Binding IsChecked, Mode=TwoWay}" Margin="0,0,14,0"/>
+                <Border DockPanel.Dock="Left" Width="36" Height="36" CornerRadius="18" Background="{StaticResource AccentSoft}" Margin="0,0,14,0">
+                  <TextBlock Style="{StaticResource Icon}" Text="{Binding Glyph}" Foreground="{StaticResource Accent}" HorizontalAlignment="Center"/>
+                </Border>
+                <TextBlock DockPanel.Dock="Right" Text="{Binding SizeText}" FontWeight="SemiBold" VerticalAlignment="Center" Margin="12,0,4,0"/>
+                <StackPanel VerticalAlignment="Center">
+                  <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="SemiBold"/>
+                  <TextBlock Text="{Binding Description}" Foreground="{StaticResource Muted}" FontSize="12" TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
+                </StackPanel>
+              </DockPanel>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+
+        <Border Grid.Row="3" Background="{StaticResource Surface}" CornerRadius="12" Padding="16,12" Margin="0,12,0,0">
+          <DockPanel>
+            <Button DockPanel.Dock="Right" Style="{StaticResource BtnDanger}" Click="Clean_Click">
+              <StackPanel Orientation="Horizontal">
+                <TextBlock Style="{StaticResource Icon}" Text="&#xF0FF;" FontSize="19" Margin="0,0,8,0"/>
+                <TextBlock Text="Limpiar seleccionados" VerticalAlignment="Center"/>
+              </StackPanel>
+            </Button>
+            <TextBlock x:Name="CleanSelectedText" Foreground="{StaticResource Muted}" VerticalAlignment="Center"/>
+          </DockPanel>
+        </Border>
+      </Grid>
+    </Grid>
+
+    <!-- ===================== CAPA "TRABAJANDO..." ===================== -->
+    <Grid x:Name="Overlay" Grid.ColumnSpan="2" Background="#D90E1014" Visibility="Collapsed">
+      <Border Background="{StaticResource Surface}" CornerRadius="14" Padding="28,24" Width="540"
+              VerticalAlignment="Center" HorizontalAlignment="Center" BorderBrush="{StaticResource Border}" BorderThickness="1">
+        <StackPanel>
+          <DockPanel Margin="0,0,0,10">
+            <Border Width="38" Height="38" CornerRadius="19" Background="{StaticResource AccentSoft}" Margin="0,0,14,0">
+              <TextBlock Style="{StaticResource Icon}" Text="&#xE86A;" Foreground="{StaticResource Accent}" HorizontalAlignment="Center"/>
+            </Border>
+            <TextBlock x:Name="BusyTitle" Text="Trabajando..." FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"/>
+          </DockPanel>
+          <TextBlock x:Name="BusyText" Foreground="{StaticResource Muted}" TextWrapping="Wrap" Margin="52,0,0,16" TextTrimming="CharacterEllipsis" MaxHeight="60"/>
+          <ProgressBar IsIndeterminate="True" Height="4" Foreground="{StaticResource Accent}" Background="{StaticResource SurfaceHover}" BorderThickness="0"/>
+        </StackPanel>
+      </Border>
+    </Grid>
+  </Grid>
+</Window>
