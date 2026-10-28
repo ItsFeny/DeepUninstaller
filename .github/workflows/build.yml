@@ -19,17 +19,37 @@ jobs:
         with:
           dotnet-version: 8.0.x
 
-      - name: Publicar
-        run: dotnet publish DeepUninstaller.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o publish
+      - name: Publicar versión portable (no requiere .NET)
+        run: dotnet publish DeepUninstaller.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=none -o out/portable
+
+      - name: Publicar versión ligera (requiere .NET 8 Desktop Runtime)
+        run: dotnet publish DeepUninstaller.csproj -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -p:DebugType=none -o out/lite
+
+      - name: Preparar archivos
+        shell: pwsh
+        run: |
+          $ver = if ($env:GITHUB_REF_TYPE -eq 'tag') { $env:GITHUB_REF_NAME } else { 'dev' }
+          New-Item -ItemType Directory -Force dist | Out-Null
+          Copy-Item out/portable/DeepUninstaller.exe "dist/DeepUninstaller-$ver-win-x64.exe"
+          Copy-Item out/lite/DeepUninstaller.exe "dist/DeepUninstaller-$ver-win-x64-ligero.exe"
 
       - uses: actions/upload-artifact@v4
         with:
           name: DeepUninstaller-win-x64
-          path: publish/DeepUninstaller.exe
+          path: dist/*.exe
 
       - name: Crear release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: publish/DeepUninstaller.exe
+          files: dist/*.exe
           generate_release_notes: true
+          body: |
+            ## Descarga
+
+            | Archivo | Para quién |
+            |---|---|
+            | `DeepUninstaller-${{ github.ref_name }}-win-x64.exe` | **Recomendado.** Portable, funciona sin instalar nada. |
+            | `DeepUninstaller-${{ github.ref_name }}-win-x64-ligero.exe` | Más pequeño; requiere [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0). |
+
+            Windows puede mostrar un aviso de SmartScreen porque el ejecutable no está firmado: pulsa **Más información → Ejecutar de todas formas**.

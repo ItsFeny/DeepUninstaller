@@ -34,14 +34,21 @@ Deep Uninstaller ejecuta el desinstalador oficial de un programa y después busc
 
 ## Descarga
 
-Descarga el ejecutable desde la sección [Releases](../../releases).
+<a href="https://github.com/ItsFeny/DeepUninstaller/releases/latest"><img src="https://img.shields.io/github/v/release/ItsFeny/DeepUninstaller?label=Descargar&style=for-the-badge" alt="Descargar"></a>
+
+Descarga la última versión desde [Releases](https://github.com/ItsFeny/DeepUninstaller/releases/latest):
+
+- **`DeepUninstaller-vX.Y.Z-win-x64.exe`** (recomendado): portable, no necesita instalar nada.
+- **`DeepUninstaller-vX.Y.Z-win-x64-ligero.exe`**: más pequeño, requiere [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0).
+
+No requiere instalación: descarga y ejecuta. Windows puede mostrar un aviso de SmartScreen porque el ejecutable no está firmado (**Más información → Ejecutar de todas formas**).
 
 ## Compilar desde el código
 
 Requisitos: Windows 10/11 y el [SDK de .NET 8](https://dotnet.microsoft.com/download/dotnet/8.0).
 
 ```powershell
-git clone https://github.com/<usuario>/DeepUninstaller.git
+git clone https://github.com/ItsFeny/DeepUninstaller.git
 cd DeepUninstaller
 dotnet build -c Release
 ```
