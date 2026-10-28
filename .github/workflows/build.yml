@@ -20,10 +20,10 @@ jobs:
           dotnet-version: 8.0.x
 
       - name: Publicar versión portable (no requiere .NET)
-        run: dotnet publish DeepUninstaller.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=none -o out/portable
+        run: dotnet publish src/DeepUninstaller/DeepUninstaller.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=none -o out/portable
 
       - name: Publicar versión ligera (requiere .NET 8 Desktop Runtime)
-        run: dotnet publish DeepUninstaller.csproj -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -p:DebugType=none -o out/lite
+        run: dotnet publish src/DeepUninstaller/DeepUninstaller.csproj -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -p:DebugType=none -o out/lite
 
       - name: Preparar archivos
         shell: pwsh

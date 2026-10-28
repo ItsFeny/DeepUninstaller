@@ -1,4 +1,4 @@
-namespace DeepUninstaller;
+namespace DeepUninstaller.Services.Scanning;
 
 /// <summary>
 /// Revisa lo encontrado antes de mostrarlo y genera avisos para el usuario.

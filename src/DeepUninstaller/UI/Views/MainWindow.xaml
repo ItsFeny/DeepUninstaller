@@ -1,13 +1,14 @@
-<Window x:Class="DeepUninstaller.MainWindow"
+<Window x:Class="DeepUninstaller.UI.Views.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:local="clr-namespace:DeepUninstaller"
-        Title="Deep Uninstaller" Icon="Assets/app.ico" Width="1260" Height="800" MinWidth="1020" MinHeight="620"
+        xmlns:models="clr-namespace:DeepUninstaller.Models"
+        xmlns:vm="clr-namespace:DeepUninstaller.UI.ViewModels"
+        Title="Deep Uninstaller" Icon="/Assets/app.ico" Width="1260" Height="800" MinWidth="1020" MinHeight="620"
         WindowStartupLocation="CenterScreen" Background="{StaticResource Bg}" Foreground="{StaticResource Text}"
         FontFamily="Segoe UI" FontSize="13" UseLayoutRounding="True">
   <Window.Resources>
     <!-- Icono de programa: imagen real o, si no tiene, el icono Material de su tipo -->
-    <DataTemplate x:Key="AppIcon" DataType="{x:Type local:InstalledApp}">
+    <DataTemplate x:Key="AppIcon" DataType="{x:Type models:InstalledApp}">
       <Grid>
         <Border CornerRadius="9" Background="{StaticResource AccentSoft}">
           <Border.Style>
@@ -35,7 +36,7 @@
     <Border Background="{StaticResource Sidebar}" BorderBrush="{StaticResource Border}" BorderThickness="0,0,1,0">
       <DockPanel Margin="12,20,12,14">
         <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="8,0,0,26">
-          <Image Source="Assets/app.png" Width="36" Height="36" RenderOptions.BitmapScalingMode="HighQuality"/>
+          <Image Source="/Assets/app.png" Width="36" Height="36" RenderOptions.BitmapScalingMode="HighQuality"/>
           <StackPanel Margin="11,0,0,0" VerticalAlignment="Center">
             <TextBlock Text="Deep Uninstaller" FontSize="15" FontWeight="SemiBold"/>
             <TextBlock Text="Desinstalación profunda" FontSize="11.5" Foreground="{StaticResource Muted}"/>
@@ -313,7 +314,7 @@
                   ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                   VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.ScrollUnit="Pixel">
           <TreeView.Resources>
-            <HierarchicalDataTemplate DataType="{x:Type local:TreeNode}" ItemsSource="{Binding Children}"
+            <HierarchicalDataTemplate DataType="{x:Type vm:TreeNode}" ItemsSource="{Binding Children}"
                                       ItemContainerStyle="{StaticResource TreeItem}">
               <DockPanel Margin="0,1">
                 <CheckBox DockPanel.Dock="Left" IsChecked="{Binding IsChecked, Mode=TwoWay}" Margin="2,0,12,0"

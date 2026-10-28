@@ -1,8 +1,6 @@
 using System.Collections.ObjectModel;
 
-namespace DeepUninstaller;
-
-public enum NodeGroup { Archivos, Registro, Sistema }
+namespace DeepUninstaller.UI.ViewModels;
 
 /// <summary>
 /// Nodo del árbol de revisión. Las raíces son los restos encontrados; las carpetas se pueden

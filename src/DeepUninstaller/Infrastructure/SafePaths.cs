@@ -1,4 +1,4 @@
-namespace DeepUninstaller;
+namespace DeepUninstaller.Infrastructure;
 
 /// <summary>
 /// Lista de rutas que NUNCA se borran (ni ellas ni sus carpetas padre).

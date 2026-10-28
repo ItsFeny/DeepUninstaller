@@ -9,14 +9,29 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AssemblyName>DeepUninstaller</AssemblyName>
     <RootNamespace>DeepUninstaller</RootNamespace>
-    <Version>1.1.0</Version>
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>
-    <Product>Deep Uninstaller</Product>
-    <AssemblyTitle>Deep Uninstaller</AssemblyTitle>
   </PropertyGroup>
 
+  <PropertyGroup Label="Metadatos">
+    <Version>1.1.0</Version>
+    <Product>Deep Uninstaller</Product>
+    <AssemblyTitle>Deep Uninstaller</AssemblyTitle>
+    <Authors>Feny Martínez</Authors>
+    <Copyright>Copyright (c) 2026 Feny Martínez</Copyright>
+    <RepositoryUrl>https://github.com/ItsFeny/DeepUninstaller</RepositoryUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+  </PropertyGroup>
+
+  <!-- Namespaces del proyecto disponibles en todos los archivos -->
   <ItemGroup>
     <Using Include="System.IO" />
+    <Using Include="DeepUninstaller.Models" />
+    <Using Include="DeepUninstaller.Infrastructure" />
+    <Using Include="DeepUninstaller.Services.Scanning" />
+    <Using Include="DeepUninstaller.Services.Cleaning" />
+    <Using Include="DeepUninstaller.UI" />
+    <Using Include="DeepUninstaller.UI.ViewModels" />
+    <Using Include="DeepUninstaller.UI.Views" />
   </ItemGroup>
 
   <ItemGroup>

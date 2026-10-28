@@ -10,13 +10,13 @@ Abre un [issue](../../issues) usando la plantilla correspondiente. Incluye tu ve
 
 1. Haz un fork del repositorio y crea una rama: `git checkout -b mi-cambio`.
 2. Compila y prueba localmente: `dotnet build -c Release`.
-3. Sigue el estilo del código existente (C# con nullable habilitado, comentarios en español).
+3. Sigue la estructura y convenciones descritas en [CLAUDE.md](CLAUDE.md) y en `.editorconfig`.
 4. Haz commits pequeños y con mensajes claros.
 5. Abre un Pull Request describiendo qué cambia y por qué.
 
 ## Seguridad ante todo
 
-Esta aplicación borra archivos y claves del registro con permisos de administrador. Cualquier cambio en `Cleaner.cs`, `LeftoverScanner*.cs`, `SafePaths.cs` o `RiskAnalyzer.cs` debe:
+Esta aplicación borra archivos y claves del registro con permisos de administrador. Cualquier cambio en `Services/` o en `Infrastructure/SafePaths.cs` debe:
 
 - Nunca borrar rutas del sistema protegidas.
 - Preferir falsos negativos (dejar un resto) antes que falsos positivos (borrar algo ajeno).

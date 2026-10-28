@@ -2,7 +2,7 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 
-namespace DeepUninstaller;
+namespace DeepUninstaller.UI.Views;
 
 public enum DialogKind { Info, Success, Warning, Danger }
 

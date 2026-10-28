@@ -2,16 +2,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 
-namespace DeepUninstaller;
-
-public class DeleteResult
-{
-    public int Deleted;
-    public int PendingReboot;
-    public long FreedBytes;
-    public string BackupDir = "";
-    public List<string> Errors = new();
-}
+namespace DeepUninstaller.Services.Cleaning;
 
 /// <summary>Ejecuta desinstaladores y borra los restos encontrados.</summary>
 public static class Cleaner

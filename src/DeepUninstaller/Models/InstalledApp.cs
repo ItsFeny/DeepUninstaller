@@ -1,14 +1,6 @@
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
 using System.Windows.Media;
 
-namespace DeepUninstaller;
-
-public abstract class Observable : INotifyPropertyChanged
-{
-    public event PropertyChangedEventHandler? PropertyChanged;
-    protected void OnChanged([CallerMemberName] string? n = null) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(n));
-}
+namespace DeepUninstaller.Models;
 
 public class InstalledApp : Observable
 {
@@ -54,52 +46,5 @@ public class InstalledApp : Observable
             if (!string.IsNullOrWhiteSpace(Version)) parts.Add(Version);
             return string.Join("  ·  ", parts);
         }
-    }
-}
-
-public enum LeftoverKind { Carpeta, Archivo, ClaveRegistro, ValorRegistro, Servicio, Tarea }
-
-/// <summary>Un resto encontrado por el escáner.</summary>
-public class LeftoverItem
-{
-    public LeftoverKind Kind { get; set; }
-    /// <summary>Ruta de archivo/carpeta, ruta de registro, nombre de servicio o de tarea.</summary>
-    public string Path { get; set; } = "";
-    /// <summary>Solo para ValorRegistro: nombre del valor dentro de la clave Path.</summary>
-    public string ValueName { get; set; } = "";
-    public bool HighConfidence { get; set; }
-    public string Reason { get; set; } = "";
-    public long SizeBytes { get; set; }
-    /// <summary>Otros programas instalados que están DENTRO de esta carpeta (borrarla los rompería).</summary>
-    public List<string> AffectedApps { get; set; } = new();
-    public bool Danger => AffectedApps.Count > 0;
-
-    public string DisplayPath => Kind == LeftoverKind.ValorRegistro ? $"{Path}  →  {ValueName}" : Path;
-}
-
-public static class Util
-{
-    public static string FormatSize(long bytes)
-    {
-        string[] u = { "B", "KB", "MB", "GB", "TB" };
-        double v = bytes;
-        int i = 0;
-        while (v >= 1024 && i < u.Length - 1) { v /= 1024; i++; }
-        return $"{v:0.#} {u[i]}";
-    }
-
-    public static long DirSize(string path)
-    {
-        long total = 0;
-        try
-        {
-            var opts = new EnumerationOptions { RecurseSubdirectories = true, IgnoreInaccessible = true, AttributesToSkip = FileAttributes.ReparsePoint };
-            foreach (var f in new DirectoryInfo(path).EnumerateFiles("*", opts))
-            {
-                try { total += f.Length; } catch { }
-            }
-        }
-        catch { }
-        return total;
     }
 }

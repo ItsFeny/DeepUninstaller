@@ -1,7 +1,7 @@
 using System.Text.Json;
 using Microsoft.Win32;
 
-namespace DeepUninstaller;
+namespace DeepUninstaller.Services.Scanning;
 
 /// <summary>Obtiene la lista de programas y juegos instalados.</summary>
 public static class AppScanner

@@ -1,6 +1,6 @@
 using Microsoft.Win32;
 
-namespace DeepUninstaller;
+namespace DeepUninstaller.Services.Scanning;
 
 public partial class LeftoverScanner
 {

@@ -1,6 +1,6 @@
 using Microsoft.Win32;
 
-namespace DeepUninstaller;
+namespace DeepUninstaller.Infrastructure;
 
 /// <summary>Ayudantes para trabajar con rutas de registro en texto ("HKLM\SOFTWARE\..."), siempre en vista 64 bits.</summary>
 public static class RegUtil

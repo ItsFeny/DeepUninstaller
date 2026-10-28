@@ -1,7 +1,7 @@
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace DeepUninstaller;
+namespace DeepUninstaller.Services.Scanning;
 
 /// <summary>
 /// Busca todo lo que deja un programa: carpetas, caché, temporales, accesos directos,

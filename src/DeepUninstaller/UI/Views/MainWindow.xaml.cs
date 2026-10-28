@@ -9,17 +9,7 @@ using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Threading;
 
-namespace DeepUninstaller;
-
-public class CategoryFilter : Observable
-{
-    private int _count;
-    public AppCategory? Category { get; init; }
-    public string Label { get; init; } = "";
-    public string Title { get; init; } = "";
-    public string Glyph { get; init; } = "";
-    public int Count { get => _count; set { _count = value; OnChanged(); } }
-}
+namespace DeepUninstaller.UI.Views;
 
 public partial class MainWindow : Window
 {

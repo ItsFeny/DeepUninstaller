@@ -1,8 +1,6 @@
 using System.Text.RegularExpressions;
 
-namespace DeepUninstaller;
-
-public enum AppCategory { Juego, Programa, Desarrollo, Componente, Controlador }
+namespace DeepUninstaller.Services.Scanning;
 
 /// <summary>Clasifica cada programa por tipo usando su nombre, fabricante y carpeta.</summary>
 public static class Categorizer

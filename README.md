@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="Assets/app.png" width="96" alt="Deep Uninstaller">
+  <img src="src/DeepUninstaller/Assets/app.png" width="96" alt="Deep Uninstaller">
 </p>
 
 <h1 align="center">Deep Uninstaller</h1>
@@ -56,20 +56,27 @@ dotnet build -c Release
 Para generar un único `.exe` autocontenido:
 
 ```powershell
-dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o publish
+dotnet publish src/DeepUninstaller/DeepUninstaller.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o publish
 ```
 
 ## Estructura del proyecto
 
-| Archivo | Responsabilidad |
-|---|---|
-| `AppScanner.cs` | Lee los programas instalados desde el registro |
-| `LeftoverScanner*.cs` | Busca restos en disco y registro |
-| `RiskAnalyzer.cs` | Detecta borrados peligrosos y genera avisos |
-| `Cleaner.cs` | Ejecuta desinstaladores, respalda y borra restos |
-| `SystemCleaner.cs` | Limpieza de temporales, papelera, etc. |
-| `SafePaths.cs` | Rutas protegidas del sistema que nunca se tocan |
-| `MainWindow.xaml` | Interfaz WPF |
+```
+src/DeepUninstaller/
+├── Models/               Datos: InstalledApp, LeftoverItem, CleanTarget...
+├── Services/
+│   ├── Scanning/         AppScanner, LeftoverScanner, Categorizer, RiskAnalyzer
+│   └── Cleaning/         Cleaner (desinstalar y borrar restos), SystemCleaner
+├── Infrastructure/       RegUtil (registro), SafePaths (rutas protegidas), Util
+├── UI/
+│   ├── Views/            MainWindow, Dialog
+│   ├── ViewModels/       TreeNode (árbol de revisión), CategoryFilter
+│   ├── Themes/Theme.xaml Colores y estilos
+│   └── Icons.cs, IconLoader.cs
+└── Assets/               Icono de la app y fuente Material Icons
+```
+
+Más detalles de arquitectura y convenciones en [CLAUDE.md](CLAUDE.md).
 
 ## Contribuir
 

@@ -1,4 +1,4 @@
-namespace DeepUninstaller;
+namespace DeepUninstaller.UI;
 
 /// <summary>Glifos de Google Material Icons (fuente incrustada en Assets/MaterialIcons-Regular.ttf).</summary>
 public static class Icons
