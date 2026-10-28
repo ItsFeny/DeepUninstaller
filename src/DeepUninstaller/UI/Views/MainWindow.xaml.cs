@@ -36,6 +36,8 @@ public partial class MainWindow : Window
     private readonly ListCollectionView _rootsView;
     private NodeGroup? _reviewFilter;
     private bool _summaryPending;
+    /// <summary>La revisión muestra carpetas huérfanas en lugar de los restos de un programa.</summary>
+    private bool _orphanMode;
 
     // Limpieza
     private readonly List<CleanTarget> _targets = SystemCleaner.GetTargets();
@@ -91,8 +93,8 @@ public partial class MainWindow : Window
         CleanView.Visibility = view == CleanView ? Visibility.Visible : Visibility.Collapsed;
 
         bool inReview = view == ReviewView;
-        NavUninstall.IsEnabled = NavClean.IsEnabled = CategoryList.IsEnabled = !inReview;
-        var cats = view == CleanView ? Visibility.Collapsed : Visibility.Visible;
+        NavUninstall.IsEnabled = NavClean.IsEnabled = NavOrphans.IsEnabled = CategoryList.IsEnabled = !inReview;
+        var cats = view == ProgramsView || (inReview && !_orphanMode) ? Visibility.Visible : Visibility.Collapsed;
         CategoriesLabel.Visibility = CategoryList.Visibility = cats;
     }
 
@@ -104,6 +106,7 @@ public partial class MainWindow : Window
             ShowView(CleanView);
             if (!_cleanAnalyzed) await AnalyzeCleanAsync();
         }
+        else if (sender == NavOrphans) await AnalyzeOrphansAsync();
         else ShowView(ProgramsView);
     }
 
@@ -247,6 +250,36 @@ public partial class MainWindow : Window
 
         // Avisos: carpetas que contienen otros programas, carpeta no accesible, etc.
         var warnings = RiskAnalyzer.Analyze(app, scanner.InstallDir, items, _apps);
+        _orphanMode = false;
+        ShowReview(app, items, warnings);
+    }
+
+    private async Task AnalyzeOrphansAsync()
+    {
+        ShowBusy("Buscando carpetas huérfanas", "Revisando Program Files, ProgramData y AppData...");
+        var progress = new Progress<string>(s => BusyText.Text = s);
+        List<LeftoverItem> items;
+        try { items = await Task.Run(() => OrphanScanner.Scan(_apps, progress)); }
+        finally { HideBusy(); }
+
+        if (items.Count == 0)
+        {
+            Dialog.Show(this, "Todo en orden", "No se encontraron carpetas de programas que ya no estén instalados.", DialogKind.Success);
+            NavUninstall.IsChecked = true;
+            return;
+        }
+
+        var warnings = new List<string>
+        {
+            "Estas carpetas no pertenecen a ningún programa instalado, pero podrían ser de programas portables o guardar configuraciones que quieras conservar. Ábrelas para revisarlas antes de borrar.",
+            "Solo vienen marcadas las carpetas vacías. Marca a mano las que reconozcas como restos.",
+        };
+        _orphanMode = true;
+        ShowReview(new InstalledApp { Name = "Carpetas huérfanas", Category = AppCategory.Programa }, items, warnings);
+    }
+
+    private void ShowReview(InstalledApp app, List<LeftoverItem> items, List<string> warnings)
+    {
         WarningsList.ItemsSource = warnings;
         WarningsBox.Visibility = warnings.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
 
@@ -256,6 +289,7 @@ public partial class MainWindow : Window
 
         ReviewTitle.Text = app.Name;
         ReviewIcon.Content = app;
+        UninstallerPanel.Visibility = _orphanMode ? Visibility.Collapsed : Visibility.Visible;
         RunUninstallerCheck.IsChecked = app.HasUninstaller;
         RunUninstallerCheck.IsEnabled = app.HasUninstaller;
         RunUninstallerHint.Text = app.Source switch
@@ -330,11 +364,16 @@ public partial class MainWindow : Window
         if ((sender as FrameworkElement)?.Tag is TreeNode n) OpenInExplorer(n.Path);
     }
 
-    private void CancelReview_Click(object sender, RoutedEventArgs e)
+    private void CancelReview_Click(object sender, RoutedEventArgs e) => CloseReview();
+
+    private void CloseReview()
     {
         _reviewApp = null;
         _roots.Clear();
+        bool wasOrphans = _orphanMode;
+        _orphanMode = false;
         ShowView(ProgramsView);
+        if (wasOrphans) NavUninstall.IsChecked = true;
     }
 
     private async void DeleteSelected_Click(object sender, RoutedEventArgs e)
@@ -371,13 +410,12 @@ public partial class MainWindow : Window
         string text = $"Elementos eliminados: {r.Deleted}\nEspacio liberado: {Util.FormatSize(r.FreedBytes)}";
         if (r.PendingReboot > 0) text += $"\nSe borrarán al reiniciar (estaban en uso): {r.PendingReboot}";
         if (r.Errors.Count > 0) text += $"\n\nNo se pudieron borrar ({r.Errors.Count}):\n" + string.Join("\n", r.Errors.Take(8));
-        text += $"\n\nCopia del registro guardada en:\n{r.BackupDir}";
-        Dialog.Show(this, r.Errors.Count == 0 ? $"{app.Name} eliminado" : "Eliminado con avisos", text,
+        if (!_orphanMode) text += $"\n\nCopia del registro guardada en:\n{r.BackupDir}";
+        string done = _orphanMode ? "Carpetas eliminadas" : $"{app.Name} eliminado";
+        Dialog.Show(this, r.Errors.Count == 0 ? done : "Eliminado con avisos", text,
             r.Errors.Count == 0 ? DialogKind.Success : DialogKind.Warning);
 
-        _reviewApp = null;
-        _roots.Clear();
-        ShowView(ProgramsView);
+        CloseReview();
         await LoadAppsAsync();
     }
 
@@ -415,7 +453,8 @@ public partial class MainWindow : Window
 
         sb.AppendLine("\nLo que desmarcaste se conserva. Se guarda copia del registro. Los archivos borrados NO van a la papelera y no se pueden recuperar.");
 
-        if (!Dialog.Show(this, $"¿Eliminar {app.Name}?", sb.ToString(), DialogKind.Danger, "Eliminar", "Cancelar")) return false;
+        string title = _orphanMode ? "¿Eliminar las carpetas seleccionadas?" : $"¿Eliminar {app.Name}?";
+        if (!Dialog.Show(this, title, sb.ToString(), DialogKind.Danger, "Eliminar", "Cancelar")) return false;
 
         if (danger.Count > 0)
         {
@@ -447,8 +486,16 @@ public partial class MainWindow : Window
         UpdateCleanTotals();
     }
 
+    private void CleanSelectAll_Click(object sender, RoutedEventArgs e)
+    {
+        bool check = CleanSelectAll.IsChecked == true;
+        foreach (var t in _targets) t.IsChecked = check;
+    }
+
     private void UpdateCleanTotals()
     {
+        int checkedCount = _targets.Count(t => t.IsChecked);
+        CleanSelectAll.IsChecked = checkedCount == _targets.Count ? true : checkedCount == 0 ? false : null;
         if (_targets.Any(t => t.SizeBytes < 0)) return;
         var sel = _targets.Where(t => t.IsChecked).ToList();
         CleanTotalBig.Text = Util.FormatSize(_targets.Sum(t => t.SizeBytes));

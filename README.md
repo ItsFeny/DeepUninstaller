@@ -28,7 +28,8 @@ Deep Uninstaller ejecuta el desinstalador oficial de un programa y después busc
 - **Análisis de riesgo**: detecta carpetas que contienen *otros* programas o launchers (Steam, Epic, Battle.net, EA, Ubisoft, Riot, GOG) y avisa antes de borrarlas.
 - **Respaldo del registro**: las claves eliminadas se exportan antes a `Documentos\DeepUninstaller\Respaldos`.
 - **Archivos bloqueados**: lo que no se puede borrar en el momento se programa para eliminarse al reiniciar.
-- **Limpieza del sistema**: temporales del usuario y de Windows, papelera, caché de Windows Update y más.
+- **Limpieza del sistema**: temporales del usuario y de Windows, papelera, caché de Windows Update y más, con opción de seleccionar todo de una vez.
+- **Carpetas huérfanas**: encuentra carpetas en `Program Files`, `ProgramData` y `AppData` de programas que ya no están instalados. Omite todo lo que usa un programa, servicio o proceso activo, o que cambió en los últimos 30 días.
 
 > ⚠️ La aplicación requiere permisos de administrador porque borra en `Program Files`, `ProgramData` y `HKLM`. Revisa siempre la lista antes de confirmar.
 

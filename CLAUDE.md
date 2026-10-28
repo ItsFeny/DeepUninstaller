@@ -36,6 +36,8 @@ Flujo de desinstalación:
 5. La UI muestra un árbol de `TreeNode` (casilla de tres estados). Lo peligroso siempre empieza desmarcado.
 6. `Cleaner` respalda el registro en `Documentos\DeepUninstaller\Respaldos` y borra; lo bloqueado se programa con `MoveFileEx(DELAY_UNTIL_REBOOT)`.
 
+Carpetas huérfanas: `OrphanScanner.Scan()` revisa las carpetas de primer nivel de Program Files (x64 y x86), ProgramData y AppData (Local y Roaming). Omite las carpetas que reclama alguna entrada de desinstalación (por ruta o por nombre/fabricante), un servicio o un proceso en ejecución, y las modificadas en los últimos 30 días. El resultado se muestra en la misma vista de revisión (`_orphanMode` en `MainWindow`). Solo las carpetas sin ninguna entrada vienen con `HighConfidence = true`. Las entradas de desinstalación sin `DisplayName` no cuentan por nombre, porque son restos.
+
 ## Reglas de seguridad (críticas)
 
 Esta app borra con permisos de administrador. Cualquier cambio en `Services/` o en `Infrastructure/SafePaths.cs` debe cumplir:

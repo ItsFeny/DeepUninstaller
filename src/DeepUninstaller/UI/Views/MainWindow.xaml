@@ -65,6 +65,13 @@
               <TextBlock Text="Limpieza del sistema" VerticalAlignment="Center"/>
             </StackPanel>
           </RadioButton>
+          <RadioButton x:Name="NavOrphans" Style="{StaticResource NavItem}" Checked="Nav_Checked" AutomationProperties.Name="Carpetas huérfanas"
+                       ToolTip="Carpetas de programas que ya no están instalados">
+            <StackPanel Orientation="Horizontal">
+              <TextBlock Style="{StaticResource Icon}" Text="&#xE2C7;" Margin="0,0,12,0"/>
+              <TextBlock Text="Carpetas huérfanas" VerticalAlignment="Center"/>
+            </StackPanel>
+          </RadioButton>
           <TextBlock x:Name="CategoriesLabel" Text="FILTRAR POR TIPO" Style="{StaticResource SectionLabel}" Margin="10,24,0,8"/>
         </StackPanel>
 
@@ -396,7 +403,7 @@
                 </StackPanel>
               </Button>
             </StackPanel>
-            <StackPanel VerticalAlignment="Center">
+            <StackPanel x:Name="UninstallerPanel" VerticalAlignment="Center">
               <CheckBox x:Name="RunUninstallerCheck" Content="Ejecutar primero el desinstalador oficial" FontWeight="SemiBold"/>
               <TextBlock x:Name="RunUninstallerHint" Foreground="{StaticResource Muted}" FontSize="11.5" Margin="27,3,0,0" TextWrapping="Wrap"
                          Text="Recomendado: el programa se desinstala a sí mismo y después se borran los restos marcados."/>
@@ -467,6 +474,8 @@
                 <TextBlock Text="Limpiar seleccionados" VerticalAlignment="Center"/>
               </StackPanel>
             </Button>
+            <CheckBox x:Name="CleanSelectAll" DockPanel.Dock="Left" Content="Seleccionar todo" FontWeight="SemiBold" IsChecked="True"
+                      VerticalAlignment="Center" Margin="0,0,20,0" Click="CleanSelectAll_Click"/>
             <TextBlock x:Name="CleanSelectedText" Foreground="{StaticResource Muted}" VerticalAlignment="Center"/>
           </DockPanel>
         </Border>
